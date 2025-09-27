@@ -23,29 +23,21 @@ def export_transcription(app):
     If SRT and diarization are both enabled, export the already-processed diarized text.
     Otherwise, export plain text.
     """
-    # Update current_text from the transcription textbox.
+    # Get the current text from the transcription box
     if hasattr(app, 'transcription_box'):
-        app.current_text = app.transcription_box.get("1.0", tk.END).strip()
+        displayed_text = app.transcription_box.get("1.0", tk.END).strip()
+    else:
+        displayed_text = ""
 
-    if not app.current_text:
+    if not displayed_text:
         # Nothing to export.
         return
 
     if app.srt_var.get():
         app.debug_print("Exporting as SRT")
-        # If diarization is enabled, app.current_text already contains the merged SRT content.
-        if hasattr(app, 'diarization_option') and app.diarization_option.is_enabled():
-            export_content = app.current_text
-        else:
-            from subtitles import save_whisper_as_srt
-            # In this branch, save_whisper_as_srt is expected to return the SRT content.
-            export_content = save_whisper_as_srt(
-                app.current_text,  # raw Whisper output
-                app.file_path,
-                app.root,
-                app.update_status,
-                return_content=True  # This flag (which you'll need to add) makes the function return the content instead of saving
-            )
+        # The text in transcription_box is already in the correct format
+        # (either SRT if srt_var was enabled, or plain text otherwise)
+        export_content = displayed_text
         initial_filename = os.path.splitext(os.path.basename(app.file_path))[0] + '.srt'
         initial_dir = os.path.dirname(app.file_path)
         save_path = filedialog.asksaveasfilename(
@@ -82,7 +74,7 @@ def export_transcription(app):
         if save_path:
             try:
                 with open(save_path, 'w', encoding='utf-8') as out_f:
-                    out_f.write(app.current_text)
+                    out_f.write(displayed_text)
                 app.update_status(f"Plain text file saved to {save_path}", "green")
             except Exception as e:
                 msg = f"Error saving text file: {str(e)}"
